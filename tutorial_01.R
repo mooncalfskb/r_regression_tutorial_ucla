@@ -1,3 +1,5 @@
+rm(list = ls())
+#https://stats.idre.ucla.edu/r/dae/logit-regression/
 #install.packages("aod")
 #install.packages("ggplot2")
 
@@ -162,6 +164,8 @@ confint.default(mylogit)
 #while Sigma supplies the variance covariance matrix of the error terms, 
 #finally Terms tells R which terms in the model are to be tested, 
 #in this case, terms 4, 5, and 6, are the three terms for the levels of rank.
+#what this means is that if you count down, starting with intercept, the ranks are number 4,5, and 6.
+#I think.
 
 wald.test(b = coef(mylogit), Sigma = vcov(mylogit), Terms = 4:6)
 
@@ -207,9 +211,11 @@ exp(cbind(OR = coef(mylogit), confint(mylogit)))
 #TESTING THE MODEL
 #We will start by calculating the predicted probability of admission at each value of rank, 
 #holding gre and gpa at their means. First we create and view the data frame. 
-  
+#struggling to understand this. 
+
 newdata1 <- with(mydata, data.frame(gre = mean(gre), gpa = mean(gpa), rank = factor(1:4)))
 
+#so this data frame is literally only 4 rows long. 
 ## view data frame
 newdata1
 #    gre    gpa rank
@@ -217,7 +223,16 @@ newdata1
 #2 587.7 3.3899    2
 #3 587.7 3.3899    3
 #4 587.7 3.3899    4
+length(newdata1)
+#don't know why it's 3? why isn't it 4? 3 = number of columns
+#[1] 3
 
+#okay predict the possibility by using the predict function. 
+#give it the glm, the newdata? 
+#newdata should contain a column for each of your predictive variables, alt and sdist. 
+#https://stats.stackexchange.com/questions/91168/r-multiple-linear-regression-model-and-prediction-model
+#so this is the prediction with mean gre and gpa. 
+#the prediction is taking all three together, so rank is important, as we can see from the prediction.
 newdata1$rankP <- predict(mylogit, newdata = newdata1, type = "response")
 newdata1
 #     gre    gpa rank     rankP
@@ -234,8 +249,34 @@ newdata1
 
 newdata2 <- with(mydata, data.frame(gre = rep(seq(from = 200, to = 800, length.out = 100), 4), gpa = mean(gpa), rank = factor(rep(1:4, each = 100))))
 
+#breakdown: start at 200, go to 800, break into 100 pieces, and repeat 4 times.
+#rep(<thing>, 4) 
+#seq(from = A, to = B, length.out = <times_to_cut>)
+rep(seq(from = 200, to = 800, length.out = 100), 4)
+# 200.0000
+# 206.0606
+# 212.1212
+# 218.1818
+
+#breakdown. Repeat the numbers 1 through 4, 100 times each.
+rep(1:4, each = 100)
+# [1] 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+# [57] 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2 2 2 2 2
+# [113] 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2
+# [169] 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3
+# [225] 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3
+# [281] 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4
+# [337] 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4
+# [393] 4 4 4 4 4 4 4 4
+
+
 head(newdata2)
-#okay so here we have a table with 100 variations of gre mapped to rank 1-4 (remember 1 is harvard and 4 is pellisippi state)
+length(newdata2)
+nrow(newdata2)
+#400 rows. 100 of each rank, with different GRE and same GPA.
+#okay so here we have a table with 100 variations of gre mapped to rank 1-4 
+#(remember 1 is harvard and 4 is pellisippi state)
+#so we have 
 #        gre    gpa rank
 # 1 200.0000 3.3899    1
 # 2 206.0606 3.3899    1
@@ -247,10 +288,18 @@ head(newdata2)
 #magical stuff to create predications. who the fuck knows how this works?
 
 newdata3 <- cbind(newdata2, predict(mylogit, newdata = newdata2, type = "link", se = TRUE))
+#se = TRUE is A switch indicating if standard errors are required.
 head(newdata3)
-#this line above creates a dataframe with some kind of fit thing.
-#which I think tells you how well the person will do. these here are very low gre scoresin the head
-#but from top tier school. 
+#okay, here is what is happening. newdata3 is a dataframe that binds newdata2 itself 
+#to the prediction for mydata2. this time predict uses type = "link" 
+#to create the fit, se.fit and residual.scale information.
+#fit	vector or matrix as above
+#se.fit	#standard error of predicted means
+#residual.scale	  #residual standard deviations
+#df	 #degrees of freedom for residual
+
+#Above, with newdata1, they used type="response" to just get the predictor variable.
+#now there is a fit, se.fit and residual.scale variable for each permutation of gre, gpa and rank
 #       gre    gpa rank        fit    se.fit residual.scale
 # 1 200.0000 3.3899    1 -0.8114870 0.5147714              1
 # 2 206.0606 3.3899    1 -0.7977632 0.5090986              1
@@ -260,9 +309,27 @@ head(newdata3)
 # 6 230.3030 3.3899    1 -0.7428681 0.4866494              1
 
 #magic code to do predicted probabilities. Adding these three cols to dataframe. 
-#you have to do the first dataframe to get the fit column which you need for this dataframe. 
 #this is like a magic lambda from python. within means use on the data you have.
-#no idea where 1.96 came from. wtf?? 
+#okay here we are adding three new columns, using the "fit" and "se.fit" columns that
+#we just created with the c(bind) on predict. 
+
+#plogis is part of Density, distribution function, quantile function and random generation 
+#for the logistic distribution with parameters location and scale.
+#plogis takes argument q, a vector of quantiles. So I guess that fit is a vector of quantiles.
+
+#The code to generate the predicted probabilities (the first line below) is the same as before, 
+#except we are also going to ask for standard errors so we can plot a confidence interval. 
+#We get the estimates on the link scale and back transform both the predicted values 
+#and confidence limits into probabilities.
+
+#translation: using "type = link" we get a scale that we can use in the plogis argument.
+#so I think that (fit + (1.96 * se.fit)) creates the colored band. 
+#UL = upper limit and LL = lower limit. 
+#so just to talk through 1 example, the first one in the dataframe below.
+#the upper limit is .54 (red) and the lowerlimit is (.1393) and the predicted is .307
+#for person with gre 200, gpa is mean 3.3899 and rank of school is 1. 
+
+
 newdata3 <- within(newdata3, {
   PredictedProb <- plogis(fit)
   LL <- plogis(fit - (1.96 * se.fit))
@@ -328,3 +395,5 @@ with(mylogit, pchisq(null.deviance - deviance, df.null - df.residual, lower.tail
 #this is the log likelihood. whatever the fuck that is. omg. 
 logLik(mylogit)
 #'log Lik.' -229.2587 (df=6)
+
+
